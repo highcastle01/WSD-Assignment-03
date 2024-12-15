@@ -1,35 +1,32 @@
-const swaggerJsdoc = require('swagger-jsdoc');
+const express = require('express');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
 
+const app = express();
+
+// Swagger YAML 파일 로드
+const swaggerYaml = YAML.load('/home/ubuntu/WSD-Assignment-03/src/swagger/openapi.yaml');
+
+// CORS 설정 (필요한 경우)
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    next();
+});
+
+// Swagger UI 옵션
 const options = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: '채용 플랫폼 API',
-      version: '1.0.0',
-      description: '채용 플랫폼의 RESTful API 문서',
-    },
-    servers: [
-      {
-        url: process.env.API_URL || 'http://localhost:3000',
-        description: '개발 서버',
-      },
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-        },
-      },
-    },
-    security: [{
-      bearerAuth: [],
-    }],
-  },
-  apis: ['./src/routes/*.js'], // API 라우트 파일 경로
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: "API Documentation",
 };
 
-const swaggerSpec = swaggerJsdoc(options);
+// Swagger 문서 라우트 설정을 /api-docs로 변경
+app.use('/api-docs', swaggerUi.serve);
+app.get('/api-docs', swaggerUi.setup(swaggerYaml, options));
 
-module.exports = swaggerSpec;
+// Swagger 서버 포트 설정 (메인 서버와 다른 포트 사용)
+const SWAGGER_PORT = process.env.SWAGGER_PORT || 4000;
+
+app.listen(SWAGGER_PORT, () => {
+    console.log(`Swagger documentation is running on http://localhost:${SWAGGER_PORT}/api-docs`);
+});

@@ -10,5 +10,6 @@ router.get('/company/:companyId', companyReviewController.getCompanyReviews);
 router.get('/me', companyReviewController.getMyReviews);
 router.put('/:id', companyReviewController.updateReview);
 router.delete('/:id', companyReviewController.deleteReview);
+router.post('/import', companyReviewController.importFromJsonl);
 
 module.exports = router;

@@ -1,11 +1,22 @@
-const { SearchHistory } = require('../models');
+const { SearchHistory, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 const searchHistoryController = {
   async saveSearch(req, res) {
+    console.log('=== saveSearch 시작 ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    console.log('User:', req.user);
+
     try {
       const { keyword, filters } = req.body;
       const userId = req.user.userId;
+
+      console.log('저장할 데이터:', {
+        userId,
+        keyword,
+        filters,
+        searchedAt: new Date()
+      });
 
       const searchHistory = await SearchHistory.create({
         userId,
@@ -14,16 +25,25 @@ const searchHistoryController = {
         searchedAt: new Date()
       });
 
+      console.log('저장된 검색 기록:', searchHistory.toJSON());
+      console.log('=== saveSearch 완료 ===');
+
       res.status(201).json({
         message: '검색 기록이 저장되었습니다.',
         searchHistory
       });
     } catch (error) {
+      console.error('saveSearch 에러:', error);
       res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   },
 
   async getMySearchHistory(req, res) {
+    console.log('Received request:', {
+      path: req.path,
+      method: req.method,
+      user: req.user
+    });
     try {
       const userId = req.user.userId;
       const { page = 1, limit = 20 } = req.query;
@@ -55,6 +75,7 @@ const searchHistoryController = {
         popularKeywords: keywordStats
       });
     } catch (error) {
+      console.error('Get search history error:', error);
       res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   },
@@ -74,6 +95,7 @@ const searchHistoryController = {
 
       res.json({ message: '검색 기록이 삭제되었습니다.' });
     } catch (error) {
+      console.error('Delete search history error:', error);
       res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   },
@@ -88,6 +110,7 @@ const searchHistoryController = {
 
       res.json({ message: '모든 검색 기록이 삭제되었습니다.' });
     } catch (error) {
+      console.error('Clear search history error:', error);
       res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   }

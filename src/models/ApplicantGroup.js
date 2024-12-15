@@ -3,12 +3,12 @@ const sequelize = require('../config/database');
 
 const ApplicantGroup = sequelize.define('ApplicantGroup', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
     primaryKey: true
   },
   companyId: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'Companies',

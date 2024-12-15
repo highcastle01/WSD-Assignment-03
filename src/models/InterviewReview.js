@@ -3,12 +3,12 @@ const sequelize = require('../config/database');
 
 const InterviewReview = sequelize.define('InterviewReview', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
     primaryKey: true
   },
   userId: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'Users',
@@ -16,50 +16,29 @@ const InterviewReview = sequelize.define('InterviewReview', {
     }
   },
   companyId: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'Companies',
       key: 'id'
     }
   },
-  interviewId: {
-    type: DataTypes.UUID,
-    references: {
-      model: 'Interviews',
-      key: 'id'
-    }
-  },
-  difficulty: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    validate: {
-      min: 1,
-      max: 5
-    }
-  },
-  result: {
-    type: DataTypes.ENUM('ACCEPTED', 'REJECTED', 'PENDING', 'WITHDRAWN'),
+  companyName: {
+    type: DataTypes.STRING,
     allowNull: false
   },
-  position: {
-    type: DataTypes.STRING
-  },
-  date: {
-    type: DataTypes.DATE
+  result: {
+    type: DataTypes.ENUM('합격', '불합격', '대기중'),
+    allowNull: false
   },
   process: {
-    type: DataTypes.TEXT
-  },
-  questions: {
-    type: DataTypes.JSON,
-    // Array of interview questions
-  },
-  content: {
     type: DataTypes.TEXT,
     allowNull: false
   },
-  tips: {
+  questions: {
+    type: DataTypes.TEXT
+  },
+  note: {
     type: DataTypes.TEXT
   }
 }, {
@@ -70,12 +49,6 @@ const InterviewReview = sequelize.define('InterviewReview', {
     },
     {
       fields: ['userId']
-    },
-    {
-      fields: ['difficulty']
-    },
-    {
-      fields: ['result']
     }
   ]
 });

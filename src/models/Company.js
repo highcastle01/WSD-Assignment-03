@@ -3,8 +3,8 @@ const sequelize = require('../config/database');
 
 const Company = sequelize.define('Company', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
     primaryKey: true
   },
   name: {
@@ -18,13 +18,29 @@ const Company = sequelize.define('Company', {
     type: DataTypes.STRING
   },
   location: {
-    type: DataTypes.STRING
+    type: DataTypes.ENUM(
+      '서울',
+      '부산',
+      '대구', 
+      '인천',
+      '광주',
+      '대전',
+      '울산',
+      '세종',
+      '경기',
+      '강원',
+      '충북',
+      '충남',
+      '전북',
+      '전남',
+      '경북',
+      '경남',
+      '제주'
+    ),
+    allowNull: false
   },
   description: {
     type: DataTypes.TEXT
-  },
-  logoUrl: {
-    type: DataTypes.STRING
   },
   employeeCount: {
     type: DataTypes.INTEGER

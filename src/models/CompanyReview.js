@@ -3,12 +3,12 @@ const sequelize = require('../config/database');
 
 const CompanyReview = sequelize.define('CompanyReview', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
     primaryKey: true
   },
   userId: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'Users',
@@ -16,45 +16,42 @@ const CompanyReview = sequelize.define('CompanyReview', {
     }
   },
   companyId: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'Companies',
       key: 'id'
     }
   },
-  rating: {
-    type: DataTypes.INTEGER,
+  field: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  isHired: {
+    type: DataTypes.BOOLEAN,
     allowNull: false,
-    validate: {
-      min: 1,
-      max: 5
-    }
+    defaultValue: false
   },
   title: {
     type: DataTypes.STRING,
     allowNull: false
   },
-  content: {
-    type: DataTypes.TEXT,
+  companyName: {
+    type: DataTypes.STRING,
     allowNull: false
   },
-  pros: {
-    type: DataTypes.TEXT
+  department: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
-  cons: {
-    type: DataTypes.TEXT
+  writer: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
-  workPeriod: {
-    type: DataTypes.JSON,
-    // { startDate: Date, endDate: Date }
-  },
-  position: {
-    type: DataTypes.STRING
-  },
-  isCurrentEmployee: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
+  createdAt: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
   }
 }, {
   timestamps: true,
@@ -64,9 +61,6 @@ const CompanyReview = sequelize.define('CompanyReview', {
     },
     {
       fields: ['userId']
-    },
-    {
-      fields: ['rating']
     }
   ]
 });

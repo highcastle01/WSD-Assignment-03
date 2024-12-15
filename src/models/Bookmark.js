@@ -3,32 +3,32 @@ const sequelize = require('../config/database');
 
 const Bookmark = sequelize.define('Bookmark', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
     primaryKey: true
   },
   userId: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'Users',
       key: 'id'
     }
   },
-  jobId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'Jobs',
-      key: 'id'
-    }
+  targetType: {
+    type: DataTypes.ENUM('job', 'company'),
+    allowNull: false
+  },
+  targetId: {
+    type: DataTypes.INTEGER,
+    allowNull: false
   }
 }, {
   timestamps: true,
   indexes: [
     {
       unique: true,
-      fields: ['userId', 'jobId']
+      fields: ['userId', 'targetType', 'targetId']
     }
   ]
 });

@@ -1,7 +1,51 @@
 const { CompanyReview, User, Company } = require('../models');
 const { Op } = require('sequelize');
+const fs = require('fs').promises;
 
 const companyReviewController = {
+
+  async importFromJsonl(req, res) {
+    try {
+      const filePath = '/home/ubuntu/WSD-Assignment-03/src/utils/saramin_companyreview.jsonl';
+      const fileContent = await fs.readFile(filePath, 'utf-8');
+      
+      const lines = fileContent.split('\n').filter(line => line.trim());
+      
+      const reviewsData = lines.map(line => {
+        const review = JSON.parse(line);
+        
+        const [year, month, day] = review.작성일자.split('.')
+          .map(num => num.padStart(2, '0'));
+        const fullYear = `20${year}`;
+        
+        return {
+          field: review.분야,
+          isHired: review.채용여부 === "채용중",
+          title: review.타이틀,
+          companyName: review.회사이름,
+          department: review.부서,
+          writer: review.작성자,
+          createdAt: new Date(`${fullYear}-${month}-${day}`),
+          companyLink: review.게시글링크,
+          userId: null,  
+          companyId: null
+        };
+      });
+
+      const createdReviews = await CompanyReview.bulkCreate(reviewsData);
+      
+      res.json({
+        message: `${createdReviews.length}개의 리뷰가 성공적으로 임포트되었습니다.`,
+        count: createdReviews.length
+      });
+    } catch (error) {
+      console.error('리뷰 임포트 중 에러 발생:', error);
+      res.status(500).json({ 
+        message: '리뷰 임포트 중 오류가 발생했습니다.',
+        error: error.message 
+      });
+    }
+  },
   async createReview(req, res) {
     try {
       const {

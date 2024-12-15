@@ -57,6 +57,7 @@ const jobController = {
       // Company 조건
       const include = [{
         model: Company,
+        as: 'company',
         where: company ? { name: { [Op.like]: `%${company}%` } } : undefined
       }];
 
@@ -72,6 +73,22 @@ const jobController = {
         distinct: true
       });
 
+      if (userId) {
+        await SearchHistory.create({
+          userId,
+          keyword: keyword || '',
+          filters: {
+            location,
+            jobType,
+            salary: minSalary || maxSalary ? { min: minSalary, max: maxSalary } : null,
+            career,
+            companyId: jobs.rows[0]?.company?.id,
+            jobId: jobs.rows[0]?.id
+          },
+          searchedAt: new Date()
+        });
+      }
+
       res.json({
         jobs: jobs.rows,
         total: jobs.count,
@@ -79,6 +96,7 @@ const jobController = {
         totalPages: Math.ceil(jobs.count / limit)
       });
     } catch (error) {
+      console.log("Error : ", error);
       res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   },
@@ -153,6 +171,7 @@ const jobController = {
         job
       });
     } catch (error) {
+      console.error('Error creating job:', error);
       res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   },

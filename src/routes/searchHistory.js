@@ -6,7 +6,7 @@ const authMiddleware = require('../middleware/auth');
 router.use(authMiddleware);
 
 router.post('/', searchHistoryController.saveSearch);
-router.get('/', searchHistoryController.getMySearchHistory);
+router.get('/history', searchHistoryController.getMySearchHistory);
 router.delete('/:id', searchHistoryController.deleteSearchHistory);
 router.delete('/', searchHistoryController.clearAllSearchHistory);
 

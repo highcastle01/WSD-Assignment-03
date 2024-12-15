@@ -42,7 +42,7 @@ const applicationController = {
         jobId,
         resumeUrl,
         coverLetter,
-        status: 'PENDING',
+        status: '지원',
         appliedAt: new Date()
       });
 
@@ -71,6 +71,7 @@ const applicationController = {
           model: Job,
           include: [{
             model: Company,
+            as: 'company',
             attributes: ['name', 'logoUrl']
           }]
         }],
@@ -88,6 +89,51 @@ const applicationController = {
     } catch (error) {
       res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
+  },
+
+  async getAllApplications(req, res) {
+      try {
+        const userId = req.user.userId;
+        const { 
+          page = 1, 
+          limit = 10,
+          status,
+          sortBy = 'createdAt',
+          order = 'DESC'
+        } = req.query;
+
+        const where = { userId };
+        
+        // 상태 필터링
+        if (status) {
+          where.status = status;
+        }
+
+        const applications = await Application.findAndCountAll({
+          where,
+          include: [{
+            model: Job,
+            include: [{
+              model: Company,
+              as: 'company',
+              attributes: ['name', 'logoUrl']
+            }]
+          }],
+          order: [[sortBy, order]],
+          limit: parseInt(limit),
+          offset: (page - 1) * limit,
+        });
+
+        res.json({
+          applications: applications.rows,
+          total: applications.count,
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(applications.count / limit)
+        });
+      } catch (error) {
+        console.error('Get applications error:', error);
+        res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+      }
   },
 
   async getApplicationDetail(req, res) {
@@ -116,29 +162,43 @@ const applicationController = {
     }
   },
 
-  async withdrawApplication(req, res) {
-    try {
-      const { id } = req.params;
-      const userId = req.user.userId;
-
-      const application = await Application.findOne({
-        where: { id, userId }
-      });
-
-      if (!application) {
-        return res.status(404).json({ message: '지원 내역을 찾을 수 없습니다.' });
+  async deleteApplication(req, res) {
+      try {
+        const { id } = req.params;
+        const userId = req.user.userId;
+  
+        // 본인의 지원 내역인지 확인하고, 관련 정보도 함께 조회
+        const application = await Application.findOne({
+          where: { 
+            id,
+            userId
+          },
+          include: [{
+            model: Job,
+            include: [{
+              model: Company,
+              as: 'company',
+              attributes: ['name']
+            }]
+          }]
+        });
+  
+        if (!application) {
+          return res.status(404).json({ message: '지원 내역을 찾을 수 없습니다.' });
+        }
+  
+        const companyName = application.Job.company.name;
+        const applicationId = application.id;
+  
+        await application.destroy();
+  
+        res.json({ 
+          message: `${companyName}의 ${applicationId}번 지원이 취소되었습니다.` 
+        });
+      } catch (error) {
+        console.error('Delete application error:', error);
+        res.status(500).json({ message: '서버 오류가 발생했습니다.' });
       }
-
-      if (['ACCEPTED', 'REJECTED'].includes(application.status)) {
-        return res.status(400).json({ message: '이미 처리된 지원은 취소할 수 없습니다.' });
-      }
-
-      await application.update({ status: 'WITHDRAWN' });
-
-      res.json({ message: '지원이 취소되었습니다.' });
-    } catch (error) {
-      res.status(500).json({ message: '서버 오류가 발생했습니다.' });
-    }
   },
 
   async updateApplicationStatus(req, res) {

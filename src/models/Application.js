@@ -3,12 +3,12 @@ const sequelize = require('../config/database');
 
 const Application = sequelize.define('Application', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
     primaryKey: true
   },
   userId: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'Users',
@@ -16,7 +16,7 @@ const Application = sequelize.define('Application', {
     }
   },
   jobId: {
-    type: DataTypes.UUID,
+    type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'Jobs',
@@ -25,17 +25,14 @@ const Application = sequelize.define('Application', {
   },
   status: {
     type: DataTypes.ENUM(
-      'PENDING',
-      'REVIEWING',
-      'INTERVIEW_SCHEDULED',
-      'ACCEPTED',
-      'REJECTED',
-      'WITHDRAWN'
+      '검토대기',
+      '검토중',
+      '면접예정',
+      '합격',
+      '불합격',
+      '지원취소'
     ),
-    defaultValue: 'PENDING'
-  },
-  resumeUrl: {
-    type: DataTypes.STRING
+    defaultValue: '검토대기'
   },
   coverLetter: {
     type: DataTypes.TEXT
@@ -47,7 +44,7 @@ const Application = sequelize.define('Application', {
   lastStatusUpdateAt: {
     type: DataTypes.DATE
   }
-}, {
+ }, {
   timestamps: true,
   indexes: [
     {
@@ -63,6 +60,6 @@ const Application = sequelize.define('Application', {
       fields: ['appliedAt']
     }
   ]
-});
-
+ });
+ 
 module.exports = Application;
