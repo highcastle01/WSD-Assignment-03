@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: 웹서비스설계 과제3
   version: 1.0.0
-  description: 202012237 임성혁의 swagger 문서입니다.
+  description: 202012237 임성혁의 swagger 문서입니다. 주요기능들은 토큰을 필요로 하므로 로그인 후 이용해주세요.
 servers:
   - url: http://113.198.66.75:18225
     description: 개발 서버
@@ -17,30 +17,27 @@ components:
     User:
       type: object
       properties:
-        id:
-          type: integer
         email:
           type: string
           format: email
+          example: "example@test.com"
         name:
           type: string
+          example: "임성혁"
+        password:
+          type: string
+          example: "password"
         phone:
           type: string
+          example: "010-1234-5678"
         career:
           type: integer
-        skillSet:
-          type: array
-          items:
-            type: string
-        lastLoginAt:
-          type: string
-          format: date-time
+          example: 3
+        
 
     Company:
       type: object
       properties:
-        id:
-          type: integer
         name:
           type: string
         industry:
@@ -59,8 +56,6 @@ components:
     Job:
       type: object
       properties:
-        id:
-          type: integer
         companyId:
           type: integer
         title:
@@ -98,8 +93,6 @@ components:
     Application:
       type: object
       properties:
-        id:
-          type: integer
         userId:
           type: integer
         jobId:
@@ -116,8 +109,6 @@ components:
     Bookmark:
       type: object
       properties:
-        id:
-          type: integer
         userId:
           type: integer
         targetType:
@@ -129,8 +120,6 @@ components:
     SearchHistory:
       type: object
       properties:
-        id:
-          type: integer
         userId:
           type: integer
         keyword:
@@ -144,8 +133,6 @@ components:
     CompanyReview:
       type: object
       properties:
-        id:
-          type: integer
         userId:
           type: integer
         companyId:
@@ -171,9 +158,6 @@ components:
     InterviewReview:
         type: object
         properties:
-          id:
-            type: integer
-            example: 1
           userId:
             type: integer
             example: 10
@@ -248,8 +232,10 @@ paths:
                 email:
                   type: string
                   format: email
+                  example: "example@test.com"
                 password:
                   type: string
+                  example: "password"
       responses:
         '200':
           description: 로그인 성공
@@ -317,17 +303,21 @@ paths:
                 name:
                   type: string
                   description: 사용자 이름
+                  example: "양오봉"
                 phone:
                   type: string
                   description: 사용자 전화번호
+                  example: "010-1234-5678"
                 career:
                   type: integer
                   description: 경력 (연수)
+                  example: 3
                 skillSet:
                   type: array
                   items:
                     type: string
                   description: 보유 기술 스택
+                  example: "백엔드"
       responses:
         '200':
           description: 프로필 업데이트 성공
@@ -363,35 +353,41 @@ paths:
       tags:
         - Jobs
       summary: 채용 공고 목록 조회
+      description: 다양한 조건에 따라 채용 공고를 조회합니다.
+      security:
+        - bearerAuth: [] # 토큰 필요
       parameters:
         - in: query
           name: page
           schema:
             type: integer
             default: 1
+          description: 페이지 번호
         - in: query
           name: limit
           schema:
             type: integer
             default: 20
+          description: 한 페이지에 표시할 공고 수
+        - in: query
+          name: company
+          schema:
+            type: string
+          description: 회사 이름(회사이름만 검색이 가능합니다. 예 : (주)미코파워)
+          example: "(주)미코파워"
+        - in: query
+          name: jobType
+          schema:
+            type: string
+            enum: [정규직, 계약직, 인턴, 기타]
+            example: "정규직"
+          description: 고용 형태
         - in: query
           name: location
           schema:
             type: string
-        - in: query
-          name: career
-          schema:
-            type: integer
-        - in: query
-          name: skills
-          schema:
-            type: array
-            items:
-              type: string
-        - in: query
-          name: keyword
-          schema:
-            type: string
+          description: 공고의 위치 (예: "경기")
+          example: "경기"
       responses:
         '200':
           description: 채용 공고 목록
@@ -406,74 +402,153 @@ paths:
                       $ref: '#/components/schemas/Job'
                   total:
                     type: integer
+                    description: 총 공고 수
                   currentPage:
                     type: integer
+                    description: 현재 페이지 번호
                   totalPages:
                     type: integer
+                    description: 총 페이지 수
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "채용공고 목록을 불러오는 중 오류가 발생했습니다."
 
     post:
       tags:
         - Jobs
       summary: 채용 공고 등록
+      description: 새 채용 공고를 등록합니다.
       security:
-        - bearerAuth: []
+        - bearerAuth: [] # 토큰 필요
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/Job'
+            example:
+              companyId: 293
+              title: "시니어 백엔드 개발자"
+              description: "우리 회사는 혁신적인 백엔드 개발자를 찾고 있습니다."
+              requiredSkills:
+                - "Node.js"
+                - "Express"
+                - "MySQL"
+                - "AWS"
+              requiredCareer: 5
+              salary:
+                min: 5000000
+                max: 7000000
+                description: "경력에 따라 협의 가능"
+              location: "서울"
+              jobType: "정규직"
+              deadline: "2024-12-31T23:59:59.000Z"
+              education: "학사"
+              position: "백엔드 개발자"
+              workingHours: "09:00-18:00"
+              startDate: "2024-01-01T09:00:00.000Z"
+              jobUrl: "https://company.com/careers/backend-developer"
       responses:
         '201':
           description: 채용 공고 등록 성공
-  /jobs/{id}:
-  get:
-    tags:
-      - Jobs
-    summary: 특정 채용 공고 조회
-    parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: integer
-        description: 조회할 채용 공고의 ID
-    responses:
-      '200':
-        description: 채용 공고 상세 조회 성공
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                job:
-                  type: object
-                  $ref: '#/components/schemas/Job'
-                isBookmarked:
-                  type: boolean
-                  description: 사용자가 해당 공고를 북마크했는지 여부
-                relatedJobs:
-                  type: array
-                  description: 연관된 채용 공고 목록
-                  items:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "채용 공고가 등록되었습니다."
+                  job:
                     $ref: '#/components/schemas/Job'
-      '404':
-        description: 채용 공고를 찾을 수 없음
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                message:
-                  type: string
-                  example: "채용 공고를 찾을 수 없습니다."
+        '400':
+          description: 요청 데이터가 유효하지 않음
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "입력하신 데이터가 유효하지 않습니다."
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "채용 공고 등록 중 오류가 발생했습니다."
+
+  /jobs/{id}:
+    get:
+      tags:
+        - Jobs
+      summary: 특정 채용 공고 조회
+      description: ID를 기반으로 특정 채용 공고를 조회합니다.
+      security:
+        - bearerAuth: [] # 토큰 필요
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 조회할 채용 공고의 ID
+      responses:
+        '200':
+          description: 채용 공고 상세 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job:
+                    $ref: '#/components/schemas/Job'
+                  isBookmarked:
+                    type: boolean
+                    description: 사용자가 해당 공고를 북마크했는지 여부
+                  relatedJobs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Job'
+        '404':
+          description: 채용 공고를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "채용 공고를 찾을 수 없습니다."
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "채용 공고 조회 중 오류가 발생했습니다."
 
     delete:
       tags:
         - Jobs
       summary: 특정 채용 공고 삭제
+      description: ID를 기반으로 특정 채용 공고를 삭제합니다.
       security:
-        - bearerAuth: []
+        - bearerAuth: [] # 토큰 필요
       parameters:
         - in: path
           name: id
@@ -494,6 +569,7 @@ paths:
                     example: "채용 공고가 삭제되었습니다."
                   jobId:
                     type: integer
+                    description: 삭제된 공고의 ID
         '404':
           description: 채용 공고를 찾을 수 없음
           content:
@@ -504,6 +580,17 @@ paths:
                   message:
                     type: string
                     example: "채용 공고를 찾을 수 없습니다."
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "채용 공고 삭제 중 오류가 발생했습니다."
+
 
   /applications:
     post:
@@ -523,8 +610,10 @@ paths:
               properties:
                 jobId:
                   type: integer
+                  example: 290
                 coverLetter:
                   type: string
+                  example: "저 임성혁은 정말 일을 잘할 수 있습니다!"
       responses:
         '201':
           description: 지원 성공
@@ -542,9 +631,6 @@ paths:
       parameters:
         - in: query
           name: status
-          schema:
-            type: string
-            enum: [지원완료, 서류검토중, 서류합격, 최종합격, 불합격]
       responses:
         '200':
           description: 지원 내역 목록
@@ -555,45 +641,6 @@ paths:
                 items:
                   $ref: '#/components/schemas/Application'
   /applications/{id}:
-    delete:
-      tags:
-        - Applications
-      summary: 특정 지원 취소
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-          description: 취소할 지원의 ID
-      responses:
-        '200':
-          description: 지원 취소 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "알 수 없음의 5번 지원이 취소되었습니다."
-                  companyName:
-                    type: string
-                  applicationId:
-                    type: integer
-        '500':
-          description: 지원 취소 중 오류 발생
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "지원 취소 중 오류가 발생했습니다."
-
     put:
       tags:
         - Applications
@@ -606,7 +653,8 @@ paths:
           required: true
           schema:
             type: integer
-          description: 수정할 지원서의 ID
+          description: 수정할 지원서의 ID(위에서 추가한 지원서 아이디를 넣어주세요.)
+          example: 7
       requestBody:
         required: true
         content:
@@ -619,6 +667,7 @@ paths:
                 coverLetter:
                   type: string
                   maxLength: 5000
+                  example: "사실 잘 모르겠어요"
       responses:
         '200':
           description: 지원서 수정 성공
@@ -659,6 +708,45 @@ paths:
                   message:
                     type: string
                     example: "지원서 수정 중 오류가 발생했습니다."
+    delete:
+      tags:
+        - Applications
+      summary: 특정 지원 취소
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: 취소할 지원의 ID
+          example: 1
+      responses:
+        '200':
+          description: 지원 취소 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "{회사}의 1번 지원이 취소되었습니다."
+                  companyName:
+                    type: string
+                  applicationId:
+                    type: integer
+        '500':
+          description: 지원 취소 중 오류 발생
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "지원 취소 중 오류가 발생했습니다."
 
   /bookmarks:
     post:
@@ -682,6 +770,7 @@ paths:
                   enum: [job, company]
                 targetId:
                   type: integer
+                  example: 5
       responses:
         '200':
           description: 북마크 토글 성공
@@ -722,7 +811,7 @@ paths:
     get:
       tags:
         - Search History
-      summary: 검색 기록 조회
+      summary: 검색 기록 조회(지금까지 검색한 모든게 뜹니다.)
       security:
         - bearerAuth: []
       responses:
@@ -739,7 +828,7 @@ paths:
     delete:
       tags:
         - Search History
-      summary: 특정 검색 기록 삭제
+      summary: 모든 검색 기록 삭제
       security:
         - bearerAuth: []
       parameters:
@@ -751,7 +840,7 @@ paths:
           description: 삭제할 검색 기록의 ID
       responses:
         '200':
-          description: 특정 검색 기록 삭제 성공
+          description: 모든 검색 기록 삭제 성공
           content:
             application/json:
               schema:
@@ -781,6 +870,84 @@ paths:
                     type: string
                     example: "검색 기록 삭제 중 오류가 발생했습니다."
   /interview-reviews:
+    post:
+        tags:
+          - InterviewReviews
+        summary: 면접 후기 등록
+        security:
+          - bearerAuth: []
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - companyId
+                  - companyName
+                  - difficulty
+                  - result
+                  - process
+                properties:
+                  companyId:
+                    type: integer
+                    description: 회사 ID
+                    example: 50
+                  companyName:
+                    type: string
+                    description: 회사 이름
+                    example: (주)애드
+                  difficulty:
+                    type: integer
+                    description: 면접 난이도 (1-5)
+                    example: 3
+                  result:
+                    type: string
+                    enum: [합격, 불합격, 대기중]
+                    description: 면접 결과
+                    example: 합격
+                  position:
+                    type: string
+                    description: 지원한 직무
+                    example: 사무직
+                  date:
+                    type: string
+                    format: date
+                    description: 면접 날짜
+                    example: 2024년 상반기
+                  process:
+                    type: string
+                    description: 면접 프로세스 설명
+                    example: 질의응답
+                  questions:
+                    type: string
+                    description: 질문 내용
+                    example: 기술스택
+                  content:
+                    type: string
+                    description: 면접 후기 본문
+                    example: 다른 분들도 파이팅
+                  tips:
+                    type: string
+                    description: 면접 팁
+                    example: 잘 하실거에요
+        responses:
+          '201':
+            description: 면접 후기가 등록되었습니다.
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "면접 후기가 등록되었습니다."
+                    review:
+                      $ref: '#/components/schemas/InterviewReview'
+          '400':
+            description: 요청 데이터가 잘못되었습니다.
+          '401':
+            description: 인증 오류
     get:
       tags:
         - InterviewReviews
@@ -842,74 +1009,7 @@ paths:
         '401':
           description: 인증 오류
 
-    post:
-      tags:
-        - InterviewReviews
-      summary: 면접 후기 등록
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - companyId
-                - companyName
-                - difficulty
-                - result
-                - process
-              properties:
-                companyId:
-                  type: integer
-                  description: 회사 ID
-                companyName:
-                  type: string
-                  description: 회사 이름
-                difficulty:
-                  type: integer
-                  description: 면접 난이도 (1-5)
-                result:
-                  type: string
-                  enum: [합격, 불합격, 대기중]
-                  description: 면접 결과
-                position:
-                  type: string
-                  description: 지원한 직무
-                date:
-                  type: string
-                  format: date
-                  description: 면접 날짜
-                process:
-                  type: string
-                  description: 면접 프로세스 설명
-                questions:
-                  type: string
-                  description: 질문 내용
-                content:
-                  type: string
-                  description: 면접 후기 본문
-                tips:
-                  type: string
-                  description: 면접 팁
-      responses:
-        '201':
-          description: 면접 후기가 등록되었습니다.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "면접 후기가 등록되었습니다."
-                  review:
-                    $ref: '#/components/schemas/InterviewReview'
-        '400':
-          description: 요청 데이터가 잘못되었습니다.
-        '401':
-          description: 인증 오류
+    
 
   /interview-reviews/{id}:
     put:
@@ -924,7 +1024,7 @@ paths:
           required: true
           schema:
             type: integer
-          description: 수정할 면접 후기 ID
+          description: 수정할 면접 후기 ID(방금 만든 것 수정 추천드립니다. 아마 5번부터 시작일겁니다..)
       requestBody:
         required: true
         content:
