@@ -31,7 +31,7 @@
 1. **서버 실행**
    ```bash
    npm install
-   npm start
+   sudo npm start
 2. **DB 실행**
    ```bash
    서버실행하면 바로 실행됩니다.
