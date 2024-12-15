@@ -9,6 +9,12 @@ const authController = {
     try {
       const { email, password, name, phone } = req.body;
 
+      // 이메일 형식 검증
+      const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: '유효하지 않은 이메일 형식입니다.' });
+      }
+
       // 이메일 중복 체크
       const existingUser = await User.findOne({ where: { email } });
       if (existingUser) {

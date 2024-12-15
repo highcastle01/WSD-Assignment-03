@@ -25,14 +25,9 @@ const Application = sequelize.define('Application', {
   },
   status: {
     type: DataTypes.ENUM(
-      '검토대기',
-      '검토중',
-      '면접예정',
-      '합격',
-      '불합격',
-      '지원취소'
+      '지원완료', '서류검토중', '서류합격', '최종합격', '불합격'
     ),
-    defaultValue: '검토대기'
+    defaultValue: '지원완료'
   },
   coverLetter: {
     type: DataTypes.TEXT

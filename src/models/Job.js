@@ -1,11 +1,19 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
+const Company = require('./Company');
 
 const Job = sequelize.define('Job', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true
+  },
+  companyId: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: Company,
+      key: 'id'
+    }
   },
   title: {
     type: DataTypes.STRING,
@@ -23,25 +31,35 @@ const Job = sequelize.define('Job', {
   },
   salary: {
     type: DataTypes.JSON
-    // { min: number, max: number, currency: string }
   },
   location: {
     type: DataTypes.STRING
   },
   jobType: {
-    type: DataTypes.ENUM('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP'),
-    defaultValue: 'FULL_TIME'
+    type: DataTypes.ENUM('정규직', '계약직', '인턴', '기타'),
+    defaultValue: '정규직'
   },
   deadline: {
     type: DataTypes.DATE
   },
-  status: {
-    type: DataTypes.ENUM('ACTIVE', 'CLOSED', 'DRAFT'),
-    defaultValue: 'ACTIVE'
-  },
   viewCount: {
     type: DataTypes.INTEGER,
     defaultValue: 0
+  },
+  jobUrl: {
+    type: DataTypes.STRING
+  },
+  education: {
+    type: DataTypes.STRING
+  },
+  position: {
+    type: DataTypes.STRING
+  },
+  workingHours: {
+    type: DataTypes.STRING
+  },
+  startDate: {
+    type: DataTypes.DATE
   }
 }, {
   timestamps: true

@@ -27,11 +27,9 @@ const jobsRouter = require('./routes/jobs');
 const applicationsRouter = require('./routes/applications');
 const bookmarksRouter = require('./routes/bookmarks');
 const searchHistoryRouter = require('./routes/searchHistory');
-const interviewsRouter = require('./routes/interviews');
 const companiesRouter = require('./routes/companies');
 const companyReviewsRouter = require('./routes/companyReviews');
 const interviewReviewsRouter = require('./routes/interviewReviews');
-const applicantGroupsRouter = require('./routes/applicantGroups');
 
 const app = express();
 
@@ -50,7 +48,7 @@ app.use(helmet({
 // 기존의 swagger 라우트 설정을 아래 코드로 교체
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerYaml, {
   customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: "채용 플랫폼 API Documentation",
+  customSiteTitle: "웹서비스설계 과제3",
   swaggerOptions: {
     persistAuthorization: true,
     displayRequestDuration: true
@@ -61,16 +59,14 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerYaml, {
 app.get('/', (req, res) => {
   res.send('Hello World!');
 });
-app.use('/api/auth', authRouter);
-app.use('/api/jobs', jobsRouter);
-app.use('/api/applications', applicationsRouter);
-app.use('/api/bookmarks', bookmarksRouter);
-app.use('/api/search-history', searchHistoryRouter);
-app.use('/api/interviews', interviewsRouter);
-app.use('/api/companies', companiesRouter);
-app.use('/api/company-reviews', companyReviewsRouter);
-app.use('/api/interview-reviews', interviewReviewsRouter);
-app.use('/api/applicant-groups', applicantGroupsRouter);
+app.use('/auth', authRouter);
+app.use('/jobs', jobsRouter);
+app.use('/applications', applicationsRouter);
+app.use('/bookmarks', bookmarksRouter);
+app.use('/search-history', searchHistoryRouter);
+app.use('/companies', companiesRouter);
+app.use('/company-reviews', companyReviewsRouter);
+app.use('/interview-reviews', interviewReviewsRouter)
 
 // 404 에러 처리
 app.use((req, res, next) => {

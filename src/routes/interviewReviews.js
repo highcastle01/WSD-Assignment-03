@@ -6,8 +6,8 @@ const authMiddleware = require('../middleware/auth');
 router.use(authMiddleware);
 
 router.post('/', interviewReviewController.createReview);
-router.get('/company/:companyId', interviewReviewController.getCompanyReviews);
-router.get('/me', interviewReviewController.getMyReviews);
+router.get('/:id', interviewReviewController.getCompanyReviews);
+router.get('/', interviewReviewController.getAllReviews);
 router.put('/:id', interviewReviewController.updateReview);
 router.delete('/:id', interviewReviewController.deleteReview);
 

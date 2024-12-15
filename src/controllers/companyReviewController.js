@@ -1,56 +1,17 @@
 const { CompanyReview, User, Company } = require('../models');
 const { Op } = require('sequelize');
-const fs = require('fs').promises;
+const searchHistoryController = require('./searchHistoryController');
 
 const companyReviewController = {
-
-  async importFromJsonl(req, res) {
-    try {
-      const filePath = '/home/ubuntu/WSD-Assignment-03/src/utils/saramin_companyreview.jsonl';
-      const fileContent = await fs.readFile(filePath, 'utf-8');
-      
-      const lines = fileContent.split('\n').filter(line => line.trim());
-      
-      const reviewsData = lines.map(line => {
-        const review = JSON.parse(line);
-        
-        const [year, month, day] = review.작성일자.split('.')
-          .map(num => num.padStart(2, '0'));
-        const fullYear = `20${year}`;
-        
-        return {
-          field: review.분야,
-          isHired: review.채용여부 === "채용중",
-          title: review.타이틀,
-          companyName: review.회사이름,
-          department: review.부서,
-          writer: review.작성자,
-          createdAt: new Date(`${fullYear}-${month}-${day}`),
-          companyLink: review.게시글링크,
-          userId: null,  
-          companyId: null
-        };
-      });
-
-      const createdReviews = await CompanyReview.bulkCreate(reviewsData);
-      
-      res.json({
-        message: `${createdReviews.length}개의 리뷰가 성공적으로 임포트되었습니다.`,
-        count: createdReviews.length
-      });
-    } catch (error) {
-      console.error('리뷰 임포트 중 에러 발생:', error);
-      res.status(500).json({ 
-        message: '리뷰 임포트 중 오류가 발생했습니다.',
-        error: error.message 
-      });
-    }
-  },
+  // 리뷰 생성
   async createReview(req, res) {
     try {
       const {
         companyId,
-        rating,
+        field,
+        companyName,
+        department,
+        writer,
         title,
         content,
         pros,
@@ -60,20 +21,36 @@ const companyReviewController = {
         isCurrentEmployee
       } = req.body;
       const userId = req.user.userId;
-
-      // 이전 리뷰 확인 (동일 회사에 대한)
+  
+      // 필수 필드 검증
+      if (!companyId || !field || !companyName || !department || !writer) {
+        return res.status(400).json({
+          message: '필수 필드가 누락되었습니다.',
+          missingFields: [
+            !companyId && 'companyId',
+            !field && 'field',
+            !companyName && 'companyName',
+            !department && 'department',
+            !writer && 'writer'
+          ].filter(Boolean)
+        });
+      }
+  
       const existingReview = await CompanyReview.findOne({
         where: { userId, companyId }
       });
-
+  
       if (existingReview) {
         return res.status(400).json({ message: '이미 이 회사에 대한 리뷰를 작성하셨습니다.' });
       }
-
+  
       const review = await CompanyReview.create({
         userId,
         companyId,
-        rating,
+        field,
+        companyName,
+        department,
+        writer,
         title,
         content,
         pros,
@@ -82,23 +59,102 @@ const companyReviewController = {
         position,
         isCurrentEmployee
       });
-
+  
       res.status(201).json({
         message: '기업 리뷰가 등록되었습니다.',
         review
       });
     } catch (error) {
+      console.error('리뷰 생성 중 오류 발생:', error);
+      res.status(500).json({ message: '서버 오류가 발생했습니다.', error: error.message });
+    }
+  },
+
+  //전체조회
+  async getAllReviews(req, res) {
+    try {
+      const { page = 1, limit = 10, sortBy = 'createdAt', order = 'DESC', keyword } = req.query;
+
+      const where = {};
+
+      // 키워드 검색 조건 추가
+      if (keyword) {
+        where[Op.or] = [
+          { title: { [Op.like]: `%${keyword}%` } },
+          { content: { [Op.like]: `%${keyword}%` } }
+        ];
+      }
+
+      const reviews = await CompanyReview.findAndCountAll({
+        where,
+        include: [
+          {
+            model: User,
+            attributes: ['id', 'name']
+          },
+          {
+            model: Company,
+            attributes: ['id', 'name']
+          }
+        ],
+        order: [[sortBy, order]],
+        offset: (page - 1) * limit,
+        limit: parseInt(limit)
+      });
+
+      // 검색 기록 저장 (로그인된 사용자만)
+      if (req.user?.userId) {
+        try {
+          const searchData = {
+            keyword: keyword || '',
+            filters: { page, limit, sortBy, order },
+            resultCount: reviews.count,
+          };
+
+          const saveResult = await searchHistoryController.saveSearch(
+            {
+              body: searchData,
+              user: req.user,
+            },
+            {
+              status: () => ({
+                json: () => {},
+              }),
+            }
+          );
+          console.log('검색 기록 저장 성공:', saveResult);
+        } catch (saveError) {
+          console.error('검색 기록 저장 실패:', saveError);
+        }
+      }
+
+      res.json({
+        reviews: reviews.rows,
+        total: reviews.count,
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(reviews.count / limit)
+      });
+    } catch (error) {
+      console.error('전체 리뷰 조회 중 오류 발생:', error);
       res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   },
 
+  // 특정 회사의 리뷰 목록 조회
   async getCompanyReviews(req, res) {
     try {
       const { companyId } = req.params;
-      const { page = 1, limit = 10, sortBy = 'createdAt', order = 'DESC' } = req.query;
+      const { page = 1, limit = 10, sortBy = 'createdAt', order = 'DESC', keyword } = req.query;
+      
+      const where = { companyId };
+
+      // 키워드 검색 추가
+      if (keyword) {
+        where.title = { [Op.like]: `%${keyword}%` }; // 제목에 키워드 검색
+      }
 
       const reviews = await CompanyReview.findAndCountAll({
-        where: { companyId },
+        where,
         include: [{
           model: User,
           attributes: ['id', 'name']
@@ -108,35 +164,50 @@ const companyReviewController = {
         limit: parseInt(limit)
       });
 
-      // 리뷰 통계
-      const stats = await CompanyReview.findOne({
-        where: { companyId },
-        attributes: [
-          [sequelize.fn('AVG', sequelize.col('rating')), 'averageRating'],
-          [sequelize.fn('COUNT', sequelize.col('id')), 'totalReviews']
-        ]
-      });
+      // 검색 기록 저장 (로그인된 사용자만)
+      if (req.user?.userId) {
+        try {
+          const searchData = {
+            keyword: keyword || '',
+            filters: { companyId, page, limit, sortBy, order },
+            resultCount: reviews.count,
+          };
+
+          const saveResult = await searchHistoryController.saveSearch(
+            {
+              body: searchData,
+              user: req.user,
+            },
+            {
+              status: () => ({
+                json: () => {},
+              }),
+            }
+          );
+          console.log('검색 기록 저장 성공:', saveResult);
+        } catch (saveError) {
+          console.error('검색 기록 저장 실패:', saveError);
+        }
+      }
 
       res.json({
         reviews: reviews.rows,
         total: reviews.count,
         currentPage: parseInt(page),
         totalPages: Math.ceil(reviews.count / limit),
-        statistics: {
-          averageRating: parseFloat(stats.get('averageRating')).toFixed(1),
-          totalReviews: parseInt(stats.get('totalReviews'))
-        }
       });
     } catch (error) {
+      console.error('회사 리뷰 조회 중 오류 발생:', error);
       res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   },
 
+  // 리뷰 수정
   async updateReview(req, res) {
     try {
       const { id } = req.params;
       const {
-        rating,
+        field,
         title,
         content,
         pros,
@@ -156,7 +227,7 @@ const companyReviewController = {
       }
 
       await review.update({
-        rating,
+        field,
         title,
         content,
         pros,
@@ -171,10 +242,12 @@ const companyReviewController = {
         review
       });
     } catch (error) {
+      console.error('리뷰 수정 중 오류 발생:', error);
       res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   },
 
+  // 리뷰 삭제
   async deleteReview(req, res) {
     try {
       const { id } = req.params;
@@ -192,10 +265,12 @@ const companyReviewController = {
 
       res.json({ message: '리뷰가 삭제되었습니다.' });
     } catch (error) {
+      console.error('리뷰 삭제 중 오류 발생:', error);
       res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   },
 
+  // 유저의 리뷰 목록 조회
   async getMyReviews(req, res) {
     try {
       const userId = req.user.userId;
@@ -205,7 +280,7 @@ const companyReviewController = {
         where: { userId },
         include: [{
           model: Company,
-          attributes: ['id', 'name', 'logoUrl']
+          attributes: ['id', 'name']
         }],
         order: [['createdAt', 'DESC']],
         offset: (page - 1) * limit,
@@ -219,6 +294,7 @@ const companyReviewController = {
         totalPages: Math.ceil(reviews.count / limit)
       });
     } catch (error) {
+      console.error('유저 리뷰 조회 중 오류 발생:', error);
       res.status(500).json({ message: '서버 오류가 발생했습니다.' });
     }
   }
